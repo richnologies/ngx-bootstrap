@@ -1,10 +1,6 @@
-import {
-  DaysCalendarViewModel,
-  DayViewModel,
-  WeekViewModel
-} from '../models/index';
+import { DaysCalendarViewModel, DayViewModel, WeekViewModel } from '../models/index';
 import { isSameDay, isSameMonth } from '../../chronos/utils/date-getters';
-import { isAfter, isBefore } from '../../chronos/utils/date-compare';
+import { isAfter, isBefore, isNotEnable } from '../../chronos/utils/date-compare';
 import { isMonthDisabled } from '../utils/bs-calendar-utils';
 import { shiftDate } from '../../chronos/utils/date-setters';
 import { endOf, startOf } from '../../chronos/utils/start-end-of';
@@ -13,6 +9,8 @@ export interface FlagDaysCalendarOptions {
   isDisabled: boolean;
   minDate: Date;
   maxDate: Date;
+  disabledDefault: 'enable' | 'disable';
+  activeDates: Date[];
   hoveredDate: Date;
   selectedDate: Date;
   selectedRange: Date[];
@@ -29,32 +27,22 @@ export function flagDaysCalendar(
       // datepicker
       const isOtherMonth = !isSameMonth(day.date, formattedMonth.month);
 
-      const isHovered =
-        !isOtherMonth && isSameDay(day.date, options.hoveredDate);
+      const isHovered = !isOtherMonth && isSameDay(day.date, options.hoveredDate);
       // date range picker
-      const isSelectionStart =
-        !isOtherMonth &&
-        options.selectedRange &&
-        isSameDay(day.date, options.selectedRange[0]);
-      const isSelectionEnd =
-        !isOtherMonth &&
-        options.selectedRange &&
-        isSameDay(day.date, options.selectedRange[1]);
+      const isSelectionStart = !isOtherMonth && options.selectedRange && isSameDay(day.date, options.selectedRange[0]);
+      const isSelectionEnd = !isOtherMonth && options.selectedRange && isSameDay(day.date, options.selectedRange[1]);
 
       const isSelected =
-        (!isOtherMonth && isSameDay(day.date, options.selectedDate)) ||
-        isSelectionStart ||
-        isSelectionEnd;
+        (!isOtherMonth && isSameDay(day.date, options.selectedDate)) || isSelectionStart || isSelectionEnd;
 
       const isInRange =
-        !isOtherMonth &&
-        options.selectedRange &&
-        isDateInRange(day.date, options.selectedRange, options.hoveredDate);
+        !isOtherMonth && options.selectedRange && isDateInRange(day.date, options.selectedRange, options.hoveredDate);
 
       const isDisabled =
         options.isDisabled ||
         isBefore(day.date, options.minDate, 'day') ||
-        isAfter(day.date, options.maxDate, 'day');
+        isAfter(day.date, options.maxDate, 'day') ||
+        isNotEnable(day.date, options.disabledDefault, options.activeDates);
 
       // decide update or not
       const newDay = Object.assign({}, day, {
@@ -83,12 +71,10 @@ export function flagDaysCalendar(
 
   // todo: add check for linked calendars
   formattedMonth.hideLeftArrow =
-    options.isDisabled ||
-    (options.monthIndex > 0 && options.monthIndex !== options.displayMonths);
+    options.isDisabled || (options.monthIndex > 0 && options.monthIndex !== options.displayMonths);
   formattedMonth.hideRightArrow =
     options.isDisabled ||
-    (options.monthIndex < options.displayMonths &&
-      options.monthIndex + 1 !== options.displayMonths);
+    (options.monthIndex < options.displayMonths && options.monthIndex + 1 !== options.displayMonths);
 
   formattedMonth.disableLeftArrow = isMonthDisabled(
     shiftDate(formattedMonth.month, { month: -1 }),
@@ -104,11 +90,7 @@ export function flagDaysCalendar(
   return formattedMonth;
 }
 
-function isDateInRange(
-  date: Date,
-  selectedRange: Date[],
-  hoveredDate: Date
-): boolean {
+function isDateInRange(date: Date, selectedRange: Date[], hoveredDate: Date): boolean {
   if (!date || !selectedRange[0]) {
     return false;
   }

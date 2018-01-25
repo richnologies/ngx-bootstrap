@@ -16,8 +16,7 @@ export interface BsDatepickerViewState {
   mode: BsDatepickerViewMode;
 }
 
-export class BsDatepickerState
-  implements DatepickerRenderOptions, DatepickerFormatOptions {
+export class BsDatepickerState implements DatepickerRenderOptions, DatepickerFormatOptions {
   // date picker
   selectedDate?: Date;
   // daterange picker
@@ -30,6 +29,9 @@ export class BsDatepickerState
   // bounds
   minDate?: Date;
   maxDate?: Date;
+
+  disabledDefault: 'enable' | 'disable' = 'enable';
+  activeDates: Date[] = [];
 
   hoveredDate?: Date;
   hoveredMonth?: Date;
@@ -70,12 +72,9 @@ export class BsDatepickerState
 
 const _initialView: BsDatepickerViewState = { date: new Date(), mode: 'day' };
 
-export const initialDatepickerState: BsDatepickerState = Object.assign(
-  new BsDatepickerConfig(),
-  {
-    locale: 'en',
-    view: _initialView,
-    selectedRange: [],
-    monthViewOptions: defaultMonthOptions
-  }
-);
+export const initialDatepickerState: BsDatepickerState = Object.assign(new BsDatepickerConfig(), {
+  locale: 'en',
+  view: _initialView,
+  selectedRange: [],
+  monthViewOptions: defaultMonthOptions
+});

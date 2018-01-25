@@ -1,11 +1,7 @@
 import { UnitOfTime } from '../types';
 import { endOf, startOf } from './start-end-of';
 
-export function isAfter(
-  date1: Date,
-  date2: Date,
-  units: UnitOfTime = 'milliseconds'
-): boolean {
+export function isAfter(date1: Date, date2: Date, units: UnitOfTime = 'milliseconds'): boolean {
   if (!date1 || !date2) {
     return false;
   }
@@ -17,11 +13,7 @@ export function isAfter(
   return date2.valueOf() < startOf(date1, units).valueOf();
 }
 
-export function isBefore(
-  date1: Date,
-  date2: Date,
-  units: UnitOfTime = 'milliseconds'
-): boolean {
+export function isBefore(date1: Date, date2: Date, units: UnitOfTime = 'milliseconds'): boolean {
   if (!date1 || !date2) {
     return false;
   }
@@ -33,30 +25,20 @@ export function isBefore(
   return endOf(date1, units).valueOf() < date2.valueOf();
 }
 
-export function isBetween(
-  date: Date,
-  from: Date,
-  to: Date,
-  units: UnitOfTime,
-  inclusivity = '()'
-): boolean {
-  const leftBound =
-    inclusivity[0] === '('
-      ? isAfter(date, from, units)
-      : !isBefore(date, from, units);
-  const rightBound =
-    inclusivity[1] === ')'
-      ? isBefore(date, to, units)
-      : !isAfter(date, to, units);
+export function isNotEnable(date: Date, disableDefault: 'enable' | 'disable', activeDates: Date[]): boolean {
+  const founded = Boolean(activeDates.find(d => isSame(date, d, 'day')));
+
+  return disableDefault === 'enable' ? founded : !founded;
+}
+
+export function isBetween(date: Date, from: Date, to: Date, units: UnitOfTime, inclusivity = '()'): boolean {
+  const leftBound = inclusivity[0] === '(' ? isAfter(date, from, units) : !isBefore(date, from, units);
+  const rightBound = inclusivity[1] === ')' ? isBefore(date, to, units) : !isAfter(date, to, units);
 
   return leftBound && rightBound;
 }
 
-export function isSame(
-  date1: Date,
-  date2: Date,
-  units: UnitOfTime = 'milliseconds'
-): boolean {
+export function isSame(date1: Date, date2: Date, units: UnitOfTime = 'milliseconds'): boolean {
   if (!date1 || !date2) {
     return false;
   }
@@ -67,24 +49,13 @@ export function isSame(
 
   const inputMs = date2.valueOf();
 
-  return (
-    startOf(date1, units).valueOf() <= inputMs &&
-    inputMs <= endOf(date1, units).valueOf()
-  );
+  return startOf(date1, units).valueOf() <= inputMs && inputMs <= endOf(date1, units).valueOf();
 }
 
-export function isSameOrAfter(
-  date1: Date,
-  date2: Date,
-  units?: UnitOfTime
-): boolean {
+export function isSameOrAfter(date1: Date, date2: Date, units?: UnitOfTime): boolean {
   return isSame(date1, date2, units) || isAfter(date1, date2, units);
 }
 
-export function isSameOrBefore(
-  date1: Date,
-  date2: Date,
-  units?: UnitOfTime
-): boolean {
+export function isSameOrBefore(date1: Date, date2: Date, units?: UnitOfTime): boolean {
   return isSame(date1, date2, units) || isBefore(date1, date2, units);
 }
