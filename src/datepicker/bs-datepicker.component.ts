@@ -88,6 +88,10 @@ export class BsDatepickerDirective implements OnInit, OnDestroy, OnChanges {
    * Maximum date which is available for selection
    */
   @Input() maxDate: Date;
+  /*
+   * Disable days if this returns true
+   */
+  @Input() beforeShowDay?: (date: Date) => boolean;
   /**
    * Emits when datepicker value has been changed
    */
@@ -208,7 +212,8 @@ export class BsDatepickerDirective implements OnInit, OnDestroy, OnChanges {
       value: this._bsValue,
       isDisabled: this.isDisabled,
       minDate: this.minDate || this.bsConfig && this.bsConfig.minDate,
-      maxDate: this.maxDate || this.bsConfig && this.bsConfig.maxDate
+      maxDate: this.maxDate || this.bsConfig && this.bsConfig.maxDate,
+      beforeShowDay: this.beforeShowDay || this.bsConfig && this.bsConfig.beforeShowDay
     });
   }
 

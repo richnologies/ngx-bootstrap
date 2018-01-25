@@ -18,6 +18,7 @@ export interface FlagDaysCalendarOptions {
   selectedRange: Date[];
   displayMonths: number;
   monthIndex: number;
+  beforeShowDay(date: Date): boolean;
 }
 
 export function flagDaysCalendar(
@@ -54,7 +55,8 @@ export function flagDaysCalendar(
       const isDisabled =
         options.isDisabled ||
         isBefore(day.date, options.minDate, 'day') ||
-        isAfter(day.date, options.maxDate, 'day');
+        isAfter(day.date, options.maxDate, 'day') ||
+        options.beforeShowDay(day.date);
 
       // decide update or not
       const newDay = Object.assign({}, day, {

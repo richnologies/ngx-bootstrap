@@ -31,6 +31,8 @@ export class BsDatepickerState
   minDate?: Date;
   maxDate?: Date;
 
+  beforeShowDay?: (date: Date) => boolean;
+
   hoveredDate?: Date;
   hoveredMonth?: Date;
   hoveredYear?: Date;

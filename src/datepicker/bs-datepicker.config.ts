@@ -22,6 +22,11 @@ export class BsDatepickerConfig
    */
   maxDate?: Date;
 
+  /*
+   * Disable days if this returns true
+   */
+  beforeShowDay?: (date: Date) => boolean;
+
   /** CSS class which will be applied to datepicker container,
    * usually used to set color theme
    */
