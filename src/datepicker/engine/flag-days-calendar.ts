@@ -25,6 +25,9 @@ export function flagDaysCalendar(
   formattedMonth: DaysCalendarViewModel,
   options: FlagDaysCalendarOptions
 ): DaysCalendarViewModel {
+  if (!(options.beforeShowDay && {}.toString.call(options.beforeShowDay) === '[object Function]')) {
+    options.beforeShowDay = (date: Date) => false;
+  }
   formattedMonth.weeks.forEach((week: WeekViewModel, weekIndex: number) => {
     week.days.forEach((day: DayViewModel, dayIndex: number) => {
       // datepicker
