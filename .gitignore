@@ -4,6 +4,7 @@
 /bower_components
 yarn.lock
 package-lock.json
+*.tgz
 
 # IDEs and editors
 /.idea
