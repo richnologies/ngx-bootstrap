@@ -7,7 +7,7 @@ import {
   MonthsCalendarViewModel,
   MonthViewOptions,
   YearsCalendarViewModel
-} from '../models/index';
+} from '../models';
 import { defaultMonthOptions } from './_defaults';
 import { BsDatepickerConfig } from '../bs-datepicker.config';
 
@@ -30,6 +30,8 @@ export class BsDatepickerState
   // bounds
   minDate?: Date;
   maxDate?: Date;
+  daysDisabled?: number[];
+  minMode?: BsDatepickerViewMode;
 
   beforeShowDay?: (date: Date) => boolean;
 
@@ -41,6 +43,7 @@ export class BsDatepickerState
   monthsModel?: DaysCalendarModel[];
   formattedMonths?: DaysCalendarViewModel[];
   flaggedMonths?: DaysCalendarViewModel[];
+  selectFromOtherMonth?: boolean;
 
   // months calendar
   monthsCalendar?: MonthsCalendarViewModel[];

@@ -1,9 +1,18 @@
-import { Component, ElementRef, HostListener, QueryList, TemplateRef, ViewChild, ViewChildren, Renderer2 } from '@angular/core';
-import { isBs3 } from '../utils/theme-provider';
-import { TypeaheadMatch } from './typeahead-match.class';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  QueryList,
+  TemplateRef,
+  ViewChild,
+  ViewChildren,
+  Renderer2
+} from '@angular/core';
+
+import { isBs3, Utils } from 'ngx-bootstrap/utils';
 import { latinize } from './typeahead-utils';
+import { TypeaheadMatch } from './typeahead-match.class';
 import { TypeaheadDirective } from './typeahead.directive';
-import { Utils } from '../utils/utils.class';
 
 @Component({
   selector: 'typeahead-container',
@@ -21,7 +30,7 @@ import { Utils } from '../utils/utils.class';
 })
 export class TypeaheadContainerComponent {
   parent: TypeaheadDirective;
-  query: any;
+  query: string[] | string;
   element: ElementRef;
   isFocused = false;
   top: string;
@@ -73,7 +82,7 @@ export class TypeaheadContainerComponent {
       }
     }
   }
-
+// tslint:disable-next-line:no-any
   get optionsListTemplate(): TemplateRef<any> {
     return this.parent ? this.parent.optionsListTemplate : undefined;
   }
@@ -86,7 +95,7 @@ export class TypeaheadContainerComponent {
   get typeaheadOptionsInScrollableView(): number {
     return this.parent ? this.parent.typeaheadOptionsInScrollableView : 5;
   }
-
+// tslint:disable-next-line:no-any
   get itemTemplate(): TemplateRef<any> {
     return this.parent ? this.parent.typeaheadItemTemplate : undefined;
   }
@@ -126,7 +135,7 @@ export class TypeaheadContainerComponent {
     this._active = value;
   }
 
-  hightlight(match: TypeaheadMatch, query: any): string {
+  highlight(match: TypeaheadMatch, query: string[] | string): string {
     let itemStr: string = match.value;
     let itemStrHelper: string = (this.parent && this.parent.typeaheadLatinize
       ? latinize(itemStr)
@@ -191,11 +200,14 @@ export class TypeaheadContainerComponent {
     if (this.liElements.first) {
       const ulStyles = Utils.getStyles(this.ulElement.nativeElement);
       const liStyles = Utils.getStyles(this.liElements.first.nativeElement);
-      const ulPaddingBottom = parseFloat((ulStyles['padding-bottom'] ? ulStyles['padding-bottom'] : '').replace('px', ''));
-      const ulPaddingTop = parseFloat((ulStyles['padding-top'] ? ulStyles['padding-top'] : '0').replace('px', ''));
-      const optionHeight = parseFloat((liStyles['height'] ? liStyles['height'] : '0').replace('px', ''));
+      const ulPaddingBottom = parseFloat((ulStyles['padding-bottom'] ? ulStyles['padding-bottom'] : '')
+        .replace('px', ''));
+      const ulPaddingTop = parseFloat((ulStyles['padding-top'] ? ulStyles['padding-top'] : '0')
+        .replace('px', ''));
+      const optionHeight = parseFloat((liStyles.height ? liStyles.height : '0')
+        .replace('px', ''));
       const height = this.typeaheadOptionsInScrollableView * optionHeight;
-      this.guiHeight = (height + ulPaddingTop + ulPaddingBottom) + 'px';
+      this.guiHeight = `${height + ulPaddingTop + ulPaddingBottom}px`;
     }
     this.renderer.setStyle(this.element.nativeElement, 'visibility', 'visible');
   }
@@ -203,6 +215,7 @@ export class TypeaheadContainerComponent {
   scrollPrevious(index: number): void {
     if (index === 0) {
       this.scrollToBottom();
+
       return;
     }
     if (this.liElements) {
@@ -216,6 +229,7 @@ export class TypeaheadContainerComponent {
   scrollNext(index: number): void {
     if (index + 1 > this.matches.length - 1) {
       this.scrollToTop();
+
       return;
     }
     if (this.liElements) {
@@ -223,21 +237,21 @@ export class TypeaheadContainerComponent {
       if (liElement && !this.isScrolledIntoView(liElement.nativeElement)) {
         this.ulElement.nativeElement.scrollTop =
           liElement.nativeElement.offsetTop -
-          this.ulElement.nativeElement.offsetHeight +
-          liElement.nativeElement.offsetHeight;
+          Number(this.ulElement.nativeElement.offsetHeight) +
+          Number(liElement.nativeElement.offsetHeight);
       }
     }
   }
 
 
   private isScrolledIntoView = function (elem: HTMLElement) {
-    const containerViewTop = this.ulElement.nativeElement.scrollTop;
-    const containerViewBottom = containerViewTop + this.ulElement.nativeElement.offsetHeight;
+    const containerViewTop: number = this.ulElement.nativeElement.scrollTop;
+    const containerViewBottom = containerViewTop + Number(this.ulElement.nativeElement.offsetHeight);
     const elemTop = elem.offsetTop;
     const elemBottom = elemTop + elem.offsetHeight;
 
     return ((elemBottom <= containerViewBottom) && (elemTop >= containerViewTop));
-  }
+  };
 
   private scrollToBottom(): void {
     this.ulElement.nativeElement.scrollTop = this.ulElement.nativeElement.scrollHeight;

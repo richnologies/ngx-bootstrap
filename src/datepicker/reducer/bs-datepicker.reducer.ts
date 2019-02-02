@@ -1,24 +1,29 @@
 // tslint:disable:max-file-line-count
 import { BsDatepickerState, initialDatepickerState } from './bs-datepicker.state';
-import { Action } from '../../mini-ngrx/index';
+import { Action } from 'ngx-bootstrap/mini-ngrx';
 import { BsDatepickerActions } from './bs-datepicker.actions';
 import { calcDaysCalendar } from '../engine/calc-days-calendar';
 import { formatDaysCalendar } from '../engine/format-days-calendar';
 import { flagDaysCalendar } from '../engine/flag-days-calendar';
-import { setFullDate, shiftDate } from '../../chronos/utils/date-setters';
+import {
+  setFullDate,
+  shiftDate,
+  isArray,
+  isDateValid,
+  startOf,
+  getLocale,
+  isAfter,
+  isBefore
+} from 'ngx-bootstrap/chronos';
 import { canSwitchMode } from '../engine/view-mode';
 import { formatMonthsCalendar } from '../engine/format-months-calendar';
 import { flagMonthsCalendar } from '../engine/flag-months-calendar';
 import { formatYearsCalendar, yearsPerCalendar } from '../engine/format-years-calendar';
 import { flagYearsCalendar } from '../engine/flag-years-calendar';
-import { BsViewNavigationEvent, DatepickerFormatOptions } from '../models/index';
-import { isArray, isDateValid } from '../../chronos/utils/type-checks';
-import { startOf } from '../../chronos/utils/start-end-of';
-import { getLocale } from '../../chronos/locale/locales';
-import { isAfter, isBefore } from '../../chronos/utils/date-compare';
+import { BsViewNavigationEvent, DatepickerFormatOptions, BsDatepickerViewMode } from '../models';
 
-export function bsDatepickerReducer(state = initialDatepickerState,
-                                    action: Action): BsDatepickerState {
+/* tslint:disable-next-line: cyclomatic-complexity */
+export function bsDatepickerReducer(state = initialDatepickerState, action: Action): BsDatepickerState {
   switch (action.type) {
     case BsDatepickerActions.CALCULATE: {
       return calculateReducer(state);
@@ -48,14 +53,21 @@ export function bsDatepickerReducer(state = initialDatepickerState,
       const payload: BsViewNavigationEvent = action.payload;
 
       const date = setFullDate(state.view.date, payload.unit);
-      const mode = payload.viewMode;
-      const newState = { view: { date, mode } };
+      let newState;
+      let mode: BsDatepickerViewMode;
+      if (canSwitchMode(payload.viewMode, state.minMode)) {
+        mode = payload.viewMode;
+        newState = { view: { date, mode } };
+      } else {
+        mode = state.view.mode;
+        newState = { selectedDate: date, view: { date, mode } };
+      }
 
       return Object.assign({}, state, newState);
     }
 
     case BsDatepickerActions.CHANGE_VIEWMODE: {
-      if (!canSwitchMode(action.payload)) {
+      if (!canSwitchMode(action.payload, state.minMode)) {
         return state;
       }
       const date = state.view.date;
@@ -86,10 +98,11 @@ export function bsDatepickerReducer(state = initialDatepickerState,
     case BsDatepickerActions.SET_OPTIONS: {
       const newState = action.payload;
       // preserve view mode
-      const mode = state.view.mode;
-      const _viewDate = isDateValid(newState.value) && newState.value
-        || isArray(newState.value) && isDateValid(newState.value[0]) && newState.value[0]
-        || state.view.date;
+      const mode = newState.minMode ? newState.minMode : state.view.mode;
+      const _viewDate =
+        (isDateValid(newState.value) && newState.value) ||
+        (isArray(newState.value) && isDateValid(newState.value[0]) && newState.value[0]) ||
+        state.view.date;
       const date = getViewDate(_viewDate, newState.minDate, newState.maxDate);
       newState.view = { mode, date };
       // update selected value
@@ -119,7 +132,7 @@ export function bsDatepickerReducer(state = initialDatepickerState,
       };
 
       const mode = state.view.mode;
-      const _date = action.payload && action.payload[0] || state.view.date;
+      const _date = (action.payload && action.payload[0]) || state.view.date;
       const date = getViewDate(_date, state.minDate, state.maxDate);
       newState.view = { mode, date };
 
@@ -158,10 +171,7 @@ function calculateReducer(state: BsDatepickerState): BsDatepickerState {
     const monthsModel = new Array(displayMonths);
     for (let monthIndex = 0; monthIndex < displayMonths; monthIndex++) {
       // todo: for unlinked calendars it will be harder
-      monthsModel[monthIndex] = calcDaysCalendar(
-        viewDate,
-        state.monthViewOptions
-      );
+      monthsModel[monthIndex] = calcDaysCalendar(viewDate, state.monthViewOptions);
       viewDate = shiftDate(viewDate, { month: 1 });
     }
 
@@ -170,16 +180,9 @@ function calculateReducer(state: BsDatepickerState): BsDatepickerState {
 
   if (state.view.mode === 'month') {
     const monthsCalendar = new Array(displayMonths);
-    for (
-      let calendarIndex = 0;
-      calendarIndex < displayMonths;
-      calendarIndex++
-    ) {
+    for (let calendarIndex = 0; calendarIndex < displayMonths; calendarIndex++) {
       // todo: for unlinked calendars it will be harder
-      monthsCalendar[calendarIndex] = formatMonthsCalendar(
-        viewDate,
-        getFormatOptions(state)
-      );
+      monthsCalendar[calendarIndex] = formatMonthsCalendar(viewDate, getFormatOptions(state));
       viewDate = shiftDate(viewDate, { year: 1 });
     }
 
@@ -189,16 +192,9 @@ function calculateReducer(state: BsDatepickerState): BsDatepickerState {
   if (state.view.mode === 'year') {
     const yearsCalendarModel = new Array(displayMonths);
 
-    for (
-      let calendarIndex = 0;
-      calendarIndex < displayMonths;
-      calendarIndex++
-    ) {
+    for (let calendarIndex = 0; calendarIndex < displayMonths; calendarIndex++) {
       // todo: for unlinked calendars it will be harder
-      yearsCalendarModel[calendarIndex] = formatYearsCalendar(
-        viewDate,
-        getFormatOptions(state)
-      );
+      yearsCalendarModel[calendarIndex] = formatYearsCalendar(viewDate, getFormatOptions(state));
       viewDate = shiftDate(viewDate, { year: yearsPerCalendar });
     }
 
@@ -208,8 +204,7 @@ function calculateReducer(state: BsDatepickerState): BsDatepickerState {
   return state;
 }
 
-function formatReducer(state: BsDatepickerState,
-                       action: Action): BsDatepickerState {
+function formatReducer(state: BsDatepickerState, action: Action): BsDatepickerState {
   if (state.view.mode === 'day') {
     const formattedMonths = state.monthsModel.map((month, monthIndex) =>
       formatDaysCalendar(month, getFormatOptions(state), monthIndex)
@@ -226,16 +221,9 @@ function formatReducer(state: BsDatepickerState,
 
   if (state.view.mode === 'month') {
     const monthsCalendar = new Array(displayMonths);
-    for (
-      let calendarIndex = 0;
-      calendarIndex < displayMonths;
-      calendarIndex++
-    ) {
+    for (let calendarIndex = 0; calendarIndex < displayMonths; calendarIndex++) {
       // todo: for unlinked calendars it will be harder
-      monthsCalendar[calendarIndex] = formatMonthsCalendar(
-        viewDate,
-        getFormatOptions(state)
-      );
+      monthsCalendar[calendarIndex] = formatMonthsCalendar(viewDate, getFormatOptions(state));
       viewDate = shiftDate(viewDate, { year: 1 });
     }
 
@@ -244,16 +232,9 @@ function formatReducer(state: BsDatepickerState,
 
   if (state.view.mode === 'year') {
     const yearsCalendarModel = new Array(displayMonths);
-    for (
-      let calendarIndex = 0;
-      calendarIndex < displayMonths;
-      calendarIndex++
-    ) {
+    for (let calendarIndex = 0; calendarIndex < displayMonths; calendarIndex++) {
       // todo: for unlinked calendars it will be harder
-      yearsCalendarModel[calendarIndex] = formatYearsCalendar(
-        viewDate,
-        getFormatOptions(state)
-      );
+      yearsCalendarModel[calendarIndex] = formatYearsCalendar(viewDate, getFormatOptions(state));
       viewDate = shiftDate(viewDate, { year: 16 });
     }
 
@@ -263,54 +244,51 @@ function formatReducer(state: BsDatepickerState,
   return state;
 }
 
-function flagReducer(state: BsDatepickerState,
-                     action: Action): BsDatepickerState {
+function flagReducer(state: BsDatepickerState, action: Action): BsDatepickerState {
   if (state.view.mode === 'day') {
-    const flaggedMonths = state.formattedMonths.map(
-      (formattedMonth, monthIndex) =>
-        flagDaysCalendar(formattedMonth, {
-          isDisabled: state.isDisabled,
-          minDate: state.minDate,
-          maxDate: state.maxDate,
-          beforeShowDay: state.beforeShowDay,
-          hoveredDate: state.hoveredDate,
-          selectedDate: state.selectedDate,
-          selectedRange: state.selectedRange,
-          displayMonths: state.displayMonths,
-          monthIndex
-        })
+    const flaggedMonths = state.formattedMonths.map((formattedMonth, monthIndex) =>
+      flagDaysCalendar(formattedMonth, {
+        isDisabled: state.isDisabled,
+        minDate: state.minDate,
+        maxDate: state.maxDate,
+        beforeShowDay: state.beforeShowDay,
+        daysDisabled: state.daysDisabled,
+        hoveredDate: state.hoveredDate,
+        selectedDate: state.selectedDate,
+        selectedRange: state.selectedRange,
+        displayMonths: state.displayMonths,
+        monthIndex
+      })
     );
 
     return Object.assign({}, state, { flaggedMonths });
   }
 
   if (state.view.mode === 'month') {
-    const flaggedMonthsCalendar = state.monthsCalendar.map(
-      (formattedMonth, monthIndex) =>
-        flagMonthsCalendar(formattedMonth, {
-          isDisabled: state.isDisabled,
-          minDate: state.minDate,
-          maxDate: state.maxDate,
-          hoveredMonth: state.hoveredMonth,
-          displayMonths: state.displayMonths,
-          monthIndex
-        })
+    const flaggedMonthsCalendar = state.monthsCalendar.map((formattedMonth, monthIndex) =>
+      flagMonthsCalendar(formattedMonth, {
+        isDisabled: state.isDisabled,
+        minDate: state.minDate,
+        maxDate: state.maxDate,
+        hoveredMonth: state.hoveredMonth,
+        displayMonths: state.displayMonths,
+        monthIndex
+      })
     );
 
     return Object.assign({}, state, { flaggedMonthsCalendar });
   }
 
   if (state.view.mode === 'year') {
-    const yearsCalendarFlagged = state.yearsCalendarModel.map(
-      (formattedMonth, yearIndex) =>
-        flagYearsCalendar(formattedMonth, {
-          isDisabled: state.isDisabled,
-          minDate: state.minDate,
-          maxDate: state.maxDate,
-          hoveredYear: state.hoveredYear,
-          displayMonths: state.displayMonths,
-          yearIndex
-        })
+    const yearsCalendarFlagged = state.yearsCalendarModel.map((formattedMonth, yearIndex) =>
+      flagYearsCalendar(formattedMonth, {
+        isDisabled: state.isDisabled,
+        minDate: state.minDate,
+        maxDate: state.maxDate,
+        hoveredYear: state.hoveredYear,
+        displayMonths: state.displayMonths,
+        yearIndex
+      })
     );
 
     return Object.assign({}, state, { yearsCalendarFlagged });
